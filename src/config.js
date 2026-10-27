@@ -8,4 +8,4 @@ export const GAME_HEIGHT = 540;
 export const DEBUG = false;
 
 // Bumped once per ship. Must match the ?v= params in index.html.
-export const VERSION = '0.0.2';
+export const VERSION = '0.0.3';

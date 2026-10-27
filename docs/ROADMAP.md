@@ -2,11 +2,12 @@
 
 Guiding rule: the game on `main` is always playable. Scope down before slipping.
 
-## Week 1 — Playable
-- Day 1: everyone clones, runs the game, makes one trivial change, syncs. Concept session.
-- Day 2–3: core mechanic prototyped in GameScene with placeholder art. Decide if it's fun.
-- Day 4–5: one real level in `levels.json`, first audio cues wired, HUD shows what matters.
-- Exit: someone outside the team can play for 5 minutes and understand it.
+## Week 1 — Playable (see docs/DESIGN.md "Week-1 slice")
+- Day 1: everyone clones, runs the game, makes one trivial change, ships it.
+- Day 2–3: walkable house, three bars with current/max, round timer = stamina, one mini-game.
+  Decide if the 60-second prioritisation loop is fun.
+- Day 4–5: three mini-games, junk-food and sanity-erosion rules, results screen, narrator lines.
+- Exit: someone outside the team plays three years, laughs at the narrator, and wants a fourth.
 
 ## Week 2 — Fun
 - Tune `balance.json` daily. Add the second and third "verbs" only if the first is already fun.
