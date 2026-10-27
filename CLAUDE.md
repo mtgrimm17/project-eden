@@ -50,19 +50,24 @@ keep the change minimal in the folders the person doesn't own.
    It can't see visuals, so also ask the person to refresh their browser and look.
 10. Don't rename or move files other people are likely working in without being asked.
 
-## Working with git (do this for non-engineers)
+## Git: NEVER run git commands that write. Humans use GitHub Desktop.
 
-If the person asks you to "sync", "save my work", "get the latest" or similar:
+**Do not run** `git add`, `git commit`, `git push`, `git pull`, `git checkout`, `git stash`, `git merge`,
+`git rebase`, or anything else that writes to `.git`. Not even if the person asks you to "sync" or
+"commit". In Cowork the sandbox cannot delete files inside `.git`, so every git write leaves
+`.lock` files behind that break GitHub Desktop for the person. This has bitten us; don't repeat it.
 
-```
-git pull --rebase origin main      # get everyone else's work first
-git add -A
-git commit -m "<short description of the change>"
-git push origin HEAD
-```
+Read-only commands are fine: `git status`, `git log`, `git diff`.
 
-If there's a merge conflict, explain in plain language which file and what the two versions do,
-and ask which to keep. Never force-push.
+When your change is done, end with exactly this instruction:
+
+> Open GitHub Desktop → type a summary → Commit to main → Push origin.
+
+If they ask to "get the latest": tell them to click *Fetch origin* then *Pull* in GitHub Desktop.
+If they hit a merge conflict: explain in plain language which file and what the two versions do;
+they resolve it in Desktop, or an engineer does. Never force-push, never run git to "fix" it.
+
+Also don't run `npm install` inside the project folder except in `tools/` (it's git-ignored there).
 
 ## Phaser notes (common mistakes to avoid)
 

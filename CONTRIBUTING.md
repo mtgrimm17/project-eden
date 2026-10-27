@@ -16,17 +16,17 @@ If step 4 doesn't work, tell Claude "the game won't start" and paste whatever th
 
 ## Every time you work
 
-1. **Get the latest**: in GitHub Desktop press *Fetch origin* then *Pull*. (Or tell Claude "get the latest".)
+1. **Get the latest**: in GitHub Desktop press *Fetch origin* then *Pull*.
 2. **Ask Claude for what you want.** Be concrete. Good requests:
    - "Make the player 20% faster."
    - "Add three more pickups to level 1 near the top-left."
    - "The pickup sound should be lower pitched and shorter."
    - "Add a pause menu with Resume and Quit."
 3. **Refresh the browser tab** to see the change. Play it. If it's wrong, say what's wrong.
-4. **Save your work**: tell Claude "sync my work" (it will pull, commit and push), or in GitHub Desktop
-   write a one-line summary and click *Commit to main* then *Push origin*.
+4. **Save your work** in GitHub Desktop: write a one-line summary, click *Commit to main*, then
+   *Push origin*. (Claude is told never to do this for you; it breaks things in Cowork.)
 
-That's it. Pull → ask → refresh → sync.
+That's it. Pull → ask → refresh → commit & push.
 
 ## What you own
 
@@ -44,8 +44,11 @@ so the owner knows.
 ## If something breaks
 
 - "Game won't load / black screen": tell Claude "the game shows a black screen, check the browser console".
-- "Merge conflict" in GitHub Desktop: don't guess. Ask Claude "help me resolve this merge conflict"
-  or ping an engineer.
+- "Merge conflict" in GitHub Desktop: don't guess. Ask Claude to explain what the two versions do,
+  then pick one in Desktop, or ping an engineer.
+- GitHub Desktop says something about a ".lock" file: open Terminal and paste
+  `rm -f ~/Developer/project-eden/.git/*.lock ~/Developer/project-eden/.git/objects/maintenance.lock`
+  (adjust the path if your clone is elsewhere), then try again.
 - Nuclear option: GitHub Desktop → Branch → *Discard all changes*, then Pull. You lose only your
   unsynced work.
 
