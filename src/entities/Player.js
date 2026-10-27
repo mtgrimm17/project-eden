@@ -9,8 +9,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.stats = stats;
     this.setCollideWorldBounds(true);
-    this.setDrag(stats.drag);
-    this.setMaxVelocity(stats.maxSpeed);
+    if (stats.movement === 'floaty') {
+      this.setDrag(stats.drag);
+      this.setMaxVelocity(stats.maxSpeed);
+    }
 
     this.keys = scene.input.keyboard.addKeys({
       up: 'W', down: 'S', left: 'A', right: 'D',
@@ -22,6 +24,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const k = this.keys;
     const ax = (k.right.isDown || k.right2.isDown ? 1 : 0) - (k.left.isDown || k.left2.isDown ? 1 : 0);
     const ay = (k.down.isDown || k.down2.isDown ? 1 : 0) - (k.up.isDown || k.up2.isDown ? 1 : 0);
-    this.setAcceleration(ax * this.stats.acceleration, ay * this.stats.acceleration);
+    if (this.stats.movement === 'floaty') {
+      // Accelerate / drift: good for ships, ice, momentum-based games.
+      this.setAcceleration(ax * this.stats.acceleration, ay * this.stats.acceleration);
+    } else {
+      // Snappy: instant start/stop, diagonal normalised so it isn't faster.
+      const len = Math.hypot(ax, ay) || 1;
+      this.setVelocity((ax / len) * this.stats.maxSpeed, (ay / len) * this.stats.maxSpeed);
+    }
   }
 }
