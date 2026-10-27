@@ -7,4 +7,5 @@ export const GAME_HEIGHT = 540;
 // Set to true to show physics bodies and the debug HUD.
 export const DEBUG = false;
 
-export const VERSION = '0.0.1';
+// Bumped once per ship. Must match the ?v= params in index.html.
+export const VERSION = '0.0.2';

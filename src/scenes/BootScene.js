@@ -12,6 +12,7 @@ export default class BootScene extends Phaser.Scene {
   }
 
   create() {
+    this.scene.launch('Version'); // persistent version badge, never stopped
     this.scene.start('Preload');
   }
 }

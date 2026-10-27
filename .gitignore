@@ -6,3 +6,5 @@ steam/node_modules/
 steam/steam_appid.txt
 tools/package-lock.json
 *.log
+.ship-message
+secrets/

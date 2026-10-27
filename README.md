@@ -31,6 +31,15 @@ tools/              smoke test (boots the game in Node, no browser needed)
 .github/workflows/  deploys main to GitHub Pages on every push
 ```
 
+## Shipping a change
+
+```
+cd ~/Developer/project-eden && ./ship.sh "v0.0.2 — what changed"
+```
+
+Pulls, runs the smoke test, commits (long description from `.ship-message` if present), pushes.
+The version badge bottom-right of the game tells you which build you're looking at.
+
 ## For contributors
 
 Read `CONTRIBUTING.md` (non-engineers) and `CLAUDE.md` (what Claude is told about this repo).

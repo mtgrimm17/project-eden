@@ -7,6 +7,7 @@ import PreloadScene from './scenes/PreloadScene.js';
 import MenuScene from './scenes/MenuScene.js';
 import GameScene from './scenes/GameScene.js';
 import HudScene from './ui/HudScene.js';
+import VersionScene from './ui/VersionScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -26,7 +27,8 @@ const config = {
       debug: DEBUG,
     },
   },
-  scene: [BootScene, PreloadScene, MenuScene, GameScene, HudScene],
+  // VersionScene stays last so it renders on top of everything.
+  scene: [BootScene, PreloadScene, MenuScene, GameScene, HudScene, VersionScene],
 };
 
 window.game = new Phaser.Game(config);

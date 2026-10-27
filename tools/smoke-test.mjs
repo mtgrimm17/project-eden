@@ -101,10 +101,18 @@ await sleep(BOOT_WAIT_MS);
 const active = () => game.scene.getScenes(true).map((s) => s.scene.key);
 
 if (active().includes('Menu')) ok('boots to Menu'); else fail(`expected Menu active, got [${active()}]`);
+if (active().includes('Version')) ok('version badge scene is running'); else fail('Version scene not active');
+
+// Version must be stamped consistently (config.js VERSION == every ?v= in index.html).
+const cfg = fs.readFileSync(path.join(ROOT, 'src/config.js'), 'utf8').match(/VERSION\s*=\s*'([^']+)'/)?.[1];
+const vParams = [...fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').matchAll(/\?v=([\w.-]+)/g)].map((m) => m[1]);
+if (cfg && vParams.length >= 2 && vParams.every((v) => v === cfg)) ok(`version ${cfg} stamped consistently`);
+else fail(`version mismatch: config.js=${cfg}, index.html=[${vParams}]`);
 
 game.scene.getScene('Menu').scene.start('Game', { levelId: 'level-1' });
 await sleep(800);
 if (active().includes('Game') && active().includes('Hud')) ok('Game + Hud start'); else fail(`expected Game+Hud, got [${active()}]`);
+if (active().includes('Version')) ok('version badge survives scene change'); else fail('Version scene stopped');
 
 const g = game.scene.getScene('Game');
 const level = g.cache.json.get('levels')['level-1'];

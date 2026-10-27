@@ -16,17 +16,21 @@ If step 4 doesn't work, tell Claude "the game won't start" and paste whatever th
 
 ## Every time you work
 
-1. **Get the latest**: in GitHub Desktop press *Fetch origin* then *Pull*.
+1. **Get the latest**: in GitHub Desktop press *Fetch origin* then *Pull*. (`ship.sh` also pulls
+   before it pushes, so if you forget, you'll still get everyone's work when you ship.)
 2. **Ask Claude for what you want.** Be concrete. Good requests:
    - "Make the player 20% faster."
    - "Add three more pickups to level 1 near the top-left."
    - "The pickup sound should be lower pitched and shorter."
    - "Add a pause menu with Resume and Quit."
 3. **Refresh the browser tab** to see the change. Play it. If it's wrong, say what's wrong.
-4. **Save your work** in GitHub Desktop: write a one-line summary, click *Commit to main*, then
-   *Push origin*. (Claude is told never to do this for you; it breaks things in Cowork.)
+4. **Ship it.** Claude ends every change with a line like
+   `cd ~/Developer/project-eden && ./ship.sh "v0.0.7 — faster player"`.
+   Open Terminal, paste it, press Enter. That pulls everyone else's work, runs the checks, commits
+   and pushes. (Claude is told never to do this itself; it breaks things in Cowork.)
+   GitHub Desktop works too if you prefer buttons: Commit to main → Push origin.
 
-That's it. Pull → ask → refresh → commit & push.
+That's it. Pull → ask → refresh → ship.
 
 ## What you own
 
