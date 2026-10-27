@@ -1,0 +1,11 @@
+{
+  "_comment": "Tunable gameplay numbers. Designers own this file. Change a number, refresh the browser.",
+  "player": {
+    "acceleration": 1400,
+    "maxSpeed": 320,
+    "drag": 900
+  },
+  "scoring": {
+    "pickupValue": 10
+  }
+}

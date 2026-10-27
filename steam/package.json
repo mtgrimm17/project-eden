@@ -1,0 +1,31 @@
+{
+  "name": "project-eden-steam",
+  "productName": "Project Eden",
+  "version": "0.0.1",
+  "description": "Electron wrap of Project Eden for Steam",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --mac --win",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "games.sound.projecteden",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js"],
+    "extraResources": [
+      { "from": "../index.html", "to": "game/index.html" },
+      { "from": "../lib", "to": "game/lib" },
+      { "from": "../src", "to": "game/src" },
+      { "from": "../assets", "to": "game/assets" }
+    ],
+    "mac": { "target": "dir", "category": "public.app-category.games" },
+    "win": { "target": "dir" }
+  }
+}

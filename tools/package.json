@@ -1,0 +1,12 @@
+{
+  "name": "project-eden-tools",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only helpers. Nothing here ships with the game.",
+  "scripts": {
+    "test": "node smoke-test.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.0"
+  }
+}

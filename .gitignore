@@ -1,0 +1,8 @@
+.DS_Store
+Thumbs.db
+node_modules/
+steam/dist/
+steam/node_modules/
+steam/steam_appid.txt
+tools/package-lock.json
+*.log

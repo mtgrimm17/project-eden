@@ -1,0 +1,14 @@
+{
+  "_comment": "Level definitions. Coordinates are in pixels on a 960x540 canvas. Designers own this file.",
+  "level-1": {
+    "name": "Sandbox",
+    "playerStart": { "x": 480, "y": 270 },
+    "pickups": [
+      { "x": 120, "y": 100 },
+      { "x": 840, "y": 100 },
+      { "x": 120, "y": 440 },
+      { "x": 840, "y": 440 },
+      { "x": 480, "y": 80 }
+    ]
+  }
+}
