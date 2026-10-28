@@ -8,7 +8,6 @@ export default class BootScene extends Phaser.Scene {
   preload() {
     this.load.json('balance', 'src/data/balance.json');
     this.load.json('house', 'src/data/house.json');
-    this.load.json('narrator', 'src/data/narrator.json');
   }
 
   create() {

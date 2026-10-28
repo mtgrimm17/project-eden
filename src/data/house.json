@@ -1,14 +1,284 @@
 {
-  "_comment": "The house layout. Coordinates in pixels on a 960x540 canvas. Designers own this file.",
-  "playerStart": { "x": 480, "y": 330 },
+  "_comment": "The house as an Overcooked kitchen. One room. Coordinates on a 960x540 canvas. Designers own this file.",
+  "_fromYear": "Stations appear when the kid reaches that year. Year 1 = fridge, microwave, sink, crib. This is the difficulty ramp.",
+  "playerStart": {
+    "x": 480,
+    "y": 300
+  },
   "rooms": [
-    { "name": "Kitchen", "x": 60, "y": 90, "w": 300, "h": 200 },
-    { "name": "Bathroom", "x": 600, "y": 90, "w": 300, "h": 200 },
-    { "name": "Living room", "x": 60, "y": 310, "w": 840, "h": 190 }
+    {
+      "name": "Home",
+      "x": 40,
+      "y": 90,
+      "w": 880,
+      "h": 420
+    }
   ],
+  "_stationTypes": {
+    "source": "Grab gives you `gives`.",
+    "processor": "An appliance. Drop something in `accepts` and after `holdSeconds` it becomes `produces[item]` on its own (null = consumed, e.g. an empty bottle washed away). Grab to take the result out.",
+    "sink": "Swallows items it `accepts` (and completes `completes` if that ticket is waiting).",
+    "counter": "Holds one item.",
+    "baby": "The crib. Drop the baby here and it stays.",
+    "dishes": "Spawns dirty dishes over time; grab takes one.",
+    "hazard": "Nothing to use; a neglected toddler heads for anything marked hazard: true."
+  },
   "stations": [
-    { "id": "fridge", "name": "Fridge", "x": 130, "y": 150, "w": 60, "h": 90, "color": "red", "glyph": "♥", "minigame": "MG_Fridge", "prompt": "Eat" },
-    { "id": "shower", "name": "Shower", "x": 830, "y": 150, "w": 70, "h": 90, "color": "blue", "glyph": "◉", "minigame": "MG_Shower", "prompt": "Shower" },
-    { "id": "bookshelf", "name": "Bookshelf", "x": 480, "y": 450, "w": 120, "h": 60, "color": "green", "glyph": "▮", "minigame": "MG_Read", "prompt": "Read" }
-  ]
+    {
+      "id": "fridge",
+      "name": "Fridge",
+      "type": "source",
+      "fromYear": 1,
+      "x": 90,
+      "y": 150,
+      "w": 70,
+      "h": 90,
+      "color": "blue",
+      "glyph": "▯",
+      "gives": "bottle-cold",
+      "climbable": true
+    },
+    {
+      "id": "microwave",
+      "name": "Microwave",
+      "type": "processor",
+      "fromYear": 1,
+      "x": 200,
+      "y": 135,
+      "w": 90,
+      "h": 60,
+      "color": "ink",
+      "glyph": "◎",
+      "accepts": "bottle-cold",
+      "produces": "bottle-warm",
+      "holdSeconds": 2.5,
+      "hazard": true
+    },
+    {
+      "id": "dishwasher",
+      "name": "Dishwasher",
+      "type": "processor",
+      "fromYear": 1,
+      "x": 330,
+      "y": 135,
+      "w": 90,
+      "h": 60,
+      "color": "blue",
+      "glyph": "≈",
+      "accepts": [
+        "bottle-empty",
+        "dish-dirty"
+      ],
+      "produces": {
+        "bottle-empty": null,
+        "dish-dirty": "dish-clean"
+      },
+      "holdSeconds": 3,
+      "hazard": true
+    },
+    {
+      "id": "crib",
+      "name": "Crib",
+      "type": "baby",
+      "fromYear": 1,
+      "x": 700,
+      "y": 300,
+      "w": 110,
+      "h": 80,
+      "color": "yellow",
+      "glyph": ""
+    },
+    {
+      "id": "shelf",
+      "name": "Diapers",
+      "type": "source",
+      "fromYear": 2,
+      "x": 870,
+      "y": 150,
+      "w": 70,
+      "h": 90,
+      "color": "green",
+      "glyph": "≡",
+      "gives": "diaper-clean",
+      "climbable": true
+    },
+    {
+      "id": "bin",
+      "name": "Bin",
+      "type": "sink",
+      "fromYear": 2,
+      "x": 870,
+      "y": 470,
+      "w": 60,
+      "h": 60,
+      "color": "mute",
+      "glyph": "✕",
+      "accepts": [
+        "diaper-dirty",
+        "trash"
+      ],
+      "hazard": true,
+      "tippable": true
+    },
+    {
+      "id": "stairs",
+      "name": "Stairs",
+      "type": "hazard",
+      "fromYear": 3,
+      "x": 90,
+      "y": 470,
+      "w": 70,
+      "h": 60,
+      "color": "mute",
+      "glyph": "⌄",
+      "hazard": true
+    },
+    {
+      "id": "toybox",
+      "name": "Toy box",
+      "type": "sink",
+      "fromYear": 3,
+      "x": 300,
+      "y": 470,
+      "w": 70,
+      "h": 50,
+      "color": "red",
+      "glyph": "★",
+      "accepts": [
+        "toy"
+      ]
+    },
+    {
+      "id": "table",
+      "name": "Table",
+      "type": "dishes",
+      "fromYear": 4,
+      "x": 480,
+      "y": 470,
+      "w": 160,
+      "h": 60,
+      "color": "wall",
+      "glyph": "◠",
+      "spawnEverySeconds": 9,
+      "maxDishes": 4
+    },
+    {
+      "id": "cupboard",
+      "name": "Cupboard",
+      "type": "sink",
+      "fromYear": 4,
+      "x": 580,
+      "y": 135,
+      "w": 90,
+      "h": 60,
+      "color": "wall",
+      "glyph": "▤",
+      "accepts": [
+        "dish-clean"
+      ],
+      "completes": "dishes",
+      "climbable": true
+    },
+    {
+      "id": "counter1",
+      "name": "Counter",
+      "type": "counter",
+      "fromYear": 4,
+      "x": 90,
+      "y": 330,
+      "w": 70,
+      "h": 50,
+      "color": "wall",
+      "glyph": "",
+      "climbable": true
+    },
+    {
+      "id": "hamper",
+      "name": "Hamper",
+      "type": "sink",
+      "fromYear": 5,
+      "x": 660,
+      "y": 470,
+      "w": 70,
+      "h": 50,
+      "color": "green",
+      "glyph": "▲",
+      "accepts": [
+        "clothes"
+      ]
+    }
+  ],
+  "_items": "hands: 1 = can be held while carrying the baby. 2 = needs both hands (put the baby down).",
+  "items": {
+    "bottle-cold": {
+      "label": "bottle",
+      "color": "blue",
+      "glyph": "▯",
+      "hands": 1
+    },
+    "bottle-warm": {
+      "label": "warm",
+      "color": "red",
+      "glyph": "▮",
+      "hands": 1
+    },
+    "bottle-empty": {
+      "label": "empty",
+      "color": "mute",
+      "glyph": "▯",
+      "hands": 1
+    },
+    "diaper-clean": {
+      "label": "diaper",
+      "color": "green",
+      "glyph": "≡",
+      "hands": 1
+    },
+    "diaper-dirty": {
+      "label": "dirty",
+      "color": "mute",
+      "glyph": "≡",
+      "hands": 1
+    },
+    "dish-dirty": {
+      "label": "dishes",
+      "color": "mute",
+      "glyph": "◠",
+      "hands": 2
+    },
+    "dish-clean": {
+      "label": "clean",
+      "color": "blue",
+      "glyph": "◠",
+      "hands": 2
+    },
+    "toy": {
+      "label": "toy",
+      "color": "red",
+      "glyph": "★",
+      "hands": 1,
+      "mess": true
+    },
+    "clothes": {
+      "label": "clothes",
+      "color": "green",
+      "glyph": "▲",
+      "hands": 1,
+      "mess": true
+    },
+    "trash": {
+      "label": "trash",
+      "color": "mute",
+      "glyph": "✕",
+      "hands": 1,
+      "mess": true
+    },
+    "baby": {
+      "label": "baby",
+      "color": "yellow",
+      "glyph": "☺",
+      "hands": 1
+    }
+  },
+  "_kid": "climbable: true = a neglected kid climbs and jumps off it. tippable: true = a neglected kid tips it over (trash spill)."
 }

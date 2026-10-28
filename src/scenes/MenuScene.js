@@ -10,21 +10,22 @@ export default class MenuScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBackgroundColor(C.bg);
-    this.registry.remove('life');
+    this.registry.remove('history');
 
     this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 70, 'PROJECT EDEN', {
       fontFamily: FONT, fontSize: '52px', color: C.inkS, fontStyle: 'bold',
     }).setOrigin(0.5);
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 22, 'a generational parenting roguelike · week-1 slice', {
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 22, 'a generational parenting roguelike · core loop toy', {
       fontFamily: FONT, fontSize: '15px', color: C.muteS,
     }).setOrigin(0.5);
 
-    const prompt = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, 'ENTER · begin observation', {
+    const prompt = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, 'ENTER · start a life', {
       fontFamily: FONT, fontSize: '18px', color: C.inkS, fontStyle: 'bold',
     }).setOrigin(0.5);
     this.tweens.add({ targets: prompt, alpha: 0.3, duration: 700, yoyo: true, repeat: -1 });
 
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 90, 'WASD move · SPACE use a station · ESC quit', {
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 90, 'WASD move   ·   mouse LEFT = left hand, mouse RIGHT = right hand\npress = grab   ·   release = drop   ·   move the mouse then release = throw to the cursor\nkeyboard: Q/J grab-drop, E/L throw   ·   ESC quit', {
+      align: 'center',
       fontFamily: FONT, fontSize: '13px', color: C.muteS,
     }).setOrigin(0.5);
 

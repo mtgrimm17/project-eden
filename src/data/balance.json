@@ -1,51 +1,142 @@
 {
   "_comment": "Tunable gameplay numbers. Designers own this file. Change a number, refresh the browser.",
-
+  "_ramp": "Everything with fromYear unlocks when the kid reaches that year. Stations ramp in house.json.",
   "player": {
     "_movement": "'snappy' = instant start/stop. 'floaty' = accelerate and drift (uses acceleration + drag).",
     "movement": "snappy",
-    "maxSpeed": 260,
+    "_controls": "Mouse: left button = left hand, right button = right hand; press = grab, release in place = drop, move-then-release = throw to cursor. Keyboard: Q/J grab-drop, E/L throw.",
+    "maxSpeed": 300,
+    "carryingBabySpeed": 220,
     "acceleration": 1400,
     "drag": 900,
-    "interactRadius": 56
+    "interactRadius": 44
   },
-
-  "life": {
-    "_comment": "Stamina max = seconds per year. Linear from staminaAt18 at startAge to staminaAtOld at oldAge, scaled by decayMult.",
-    "startAge": 18,
-    "oldAge": 58,
-    "staminaAt18": 60,
-    "staminaAtOld": 30,
-    "minStamina": 15
+  "round": {
+    "_comment": "One round = one year of the kid's life.",
+    "seconds": 30
   },
-
-  "resources": {
-    "_comment": "Each resource has current + max. 'drain' is per second. 'minMax' is the floor a max can erode to.",
-    "hunger": { "startMax": 100, "drain": 2.0, "minMax": 30, "starveSeconds": 8 },
-    "sanity": { "startMax": 100, "drain": 1.5, "minMax": 20, "erosionAtZero": 1.0 },
-    "stamina": { "drain": 1.0 }
+  "baby": {
+    "_comment": "Who the kid is each year is in `phases` (first phase whose fromYear <= year). Shared numbers below.",
+    "_attention": "Need for attention rises from 0 to 1 over `attentionSeconds` while not held. Colour goes green → yellow → red. Pick up = reset to 0. Walking within patRadius = minus patRelief, once per patCooldownSeconds. At 1 (red) the phase's `trouble` happens.",
+    "phases": [
+      {
+        "name": "baby",
+        "fromYear": 1,
+        "speed": 0,
+        "attentionSeconds": 20,
+        "patRadius": 44,
+        "patRelief": 0.3,
+        "patCooldownSeconds": 3,
+        "_trouble": "cry = cries until picked up.",
+        "trouble": "cry",
+        "dropsToys": false
+      },
+      {
+        "name": "toddler",
+        "fromYear": 2,
+        "speed": 35,
+        "attentionSeconds": 25,
+        "patRadius": 44,
+        "patRelief": 0.3,
+        "patCooldownSeconds": 3,
+        "_trouble": "hazard = wanders; when red, heads for the nearest hazard and cries on arrival.",
+        "trouble": "hazard",
+        "dropsToys": true,
+        "retargetEverySeconds": 5
+      },
+      {
+        "name": "kid",
+        "fromYear": 4,
+        "speed": 110,
+        "attentionSeconds": 18,
+        "patRadius": 48,
+        "patRelief": 0.35,
+        "patCooldownSeconds": 2.5,
+        "_trouble": "antics = runs around; when red, climbs and jumps off something climbable (cries) or tips the bin (trash everywhere, cries).",
+        "trouble": "antics",
+        "dropsToys": true,
+        "retargetEverySeconds": 2.5,
+        "trashSpill": 4
+      }
+    ],
+    "pauseAfterPutDownSeconds": 2.0,
+    "dangerPenaltyPerSecond": -2,
+    "toyDropEverySeconds": 7,
+    "maxToysOnFloor": 6,
+    "hitByThrowCry": 1.5,
+    "_combos": "Baby in one hand + warm bottle in the other feeds over feedSeconds while you walk. Baby + clean diaper changes over changeSeconds.",
+    "feedSeconds": 3.0,
+    "changeSeconds": 2.5,
+    "sootheCarrySeconds": 4.0,
+    "_cry": "Cry level rises while any baby need is unmet, the kid is at a hazard, or is in trouble; falls otherwise. Crying costs score per second.",
+    "cryRisePerSecond": 0.5,
+    "cryFallPerSecond": 0.8,
+    "cryMax": 3
   },
-
-  "stations": {
-    "_comment": "Effects applied after a mini-game. 'cur' is scaled by score (0..1). 'max' applies in full if score >= maxThreshold, negatives always apply.",
-    "maxThreshold": 0.6,
-    "fridge": {
-      "junk": { "hunger": { "cur": 45, "max": -6 } },
-      "cook": { "hunger": { "cur": 70, "max": 3 } }
+  "mess": {
+    "_comment": "Mess on the floor costs perItemPerSecond. Clothes and trash start appearing from their fromYear.",
+    "perItemPerSecond": -0.25,
+    "clothesFromYear": 5,
+    "clothesEverySeconds": 16,
+    "trashFromYear": 5,
+    "trashEverySeconds": 12,
+    "maxOnFloor": 10
+  },
+  "throw": {
+    "_comment": "Mouse: hold a hand's button, move the cursor, release = throw to the cursor. Keyboard E/L throws `distance` the way you're facing. Lands in a container that accepts it = put away. Hits the baby = crying + a soothe demand. Hits a hazard = penalty. Two-handed items and the baby can't be thrown.",
+    "speed": 560,
+    "distance": 320,
+    "maxDistance": 520,
+    "dragThresholdPx": 10,
+    "catchRadius": 30,
+    "babyHitRadius": 22,
+    "hazardHitPenalty": -8
+  },
+  "demands": {
+    "_comment": "Tickets. 'every' = seconds between spawns of that type (jittered). 'timer' = seconds before it expires. 'first' = seconds until the first one. 'fromYear' = when this demand starts existing.",
+    "feed": {
+      "label": "Feed",
+      "fromYear": 1,
+      "timer": 20,
+      "every": 18,
+      "first": 3,
+      "color": "red"
     },
-    "shower": {
-      "done": { "sanity": { "cur": 35, "max": 0 } }
+    "soothe": {
+      "label": "Soothe",
+      "fromYear": 1,
+      "timer": 15,
+      "every": 40,
+      "first": 25,
+      "color": "yellow",
+      "_note": "Also spawned whenever the kid cries from neglect."
     },
-    "bookshelf": {
-      "done": { "sanity": { "cur": 30, "max": 2 } }
-    }
+    "change": {
+      "label": "Change",
+      "fromYear": 2,
+      "timer": 18,
+      "every": 20,
+      "first": 8,
+      "color": "green"
+    },
+    "dishes": {
+      "label": "Dishes",
+      "fromYear": 4,
+      "timer": 25,
+      "every": 28,
+      "first": 12,
+      "color": "blue"
+    },
+    "jitter": 0.3,
+    "maxOpen": 5
   },
-
-  "minigames": {
-    "fridge": { "cookTaps": 12, "cookSeconds": 4 },
-    "shower": { "seconds": 6, "zoneHeight": 0.22, "zoneSpeed": 0.35, "needleRise": 1.6, "needleFall": 1.2 },
-    "bookshelf": { "beats": 6, "beatMs": 700, "perfectMs": 80, "goodMs": 180 }
-  },
-
-  "narrator": { "cooldownMs": 4500, "idleSeconds": 3, "lowBarFraction": 0.25 }
+  "scoring": {
+    "_comment": "Stars for the year from completion rate. The kid's next year (and the next generation) will be built on this.",
+    "complete": 10,
+    "expire": -6,
+    "cryPerSecond": -1,
+    "threeStars": 0.85,
+    "twoStars": 0.6,
+    "oneStar": 0.35
+  }
 }

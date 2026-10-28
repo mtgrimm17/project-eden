@@ -19,10 +19,13 @@ at a time, then take over as the kid you raised, inheriting every shortcut you t
 
 ## Time
 
-- **One round = one year = up to 60 seconds.** The round ends (you sleep) when stamina hits 0.
-- **Stamina is seconds per round.** Max stamina is 100 at 18 and decays with age (roughly 50 at 58);
+- **One human ≈ 10 minutes of play.** 0–5 minutes pre-kid, then 18 years (~10 min) of parenting.
+- **One round = one year.** The round ends (you sleep) when stamina hits 0.
+- **Stamina is seconds per round.** Max stamina is ~40 at 18 and decays with age (~20 at 58);
   decisions and mini-game performance change the decay rate. At 18 you can do everything; at 58
-  you must choose.
+  you must choose. Two or three 10–15s mini-games fit in a young year; one in an old one.
+- Open: at this scale, 0–5 min pre-kid means the baby arrives by about age 26, not 40. Either
+  accept that, or make a round represent more than one year pre-kid (`yearsPerRound`).
 - **A run starts at age 18.** You become a parent at a narrator-driven moment somewhere between
   18 and 40 (influenced by stats, history, genealogy). Everyone has a child by 40.
 - **Handoff:** when the child turns 18 you take over as them, whatever your age (36 to 58).
@@ -78,17 +81,66 @@ Those reduced maxima, plus traits, are what you inherit at the handoff.
 - **Parent dies before the kid is 18** (hunger/health hits 0 against a shrunken max).
 - **Kid is non-viable at 18** (enough neglect that they can't function; narrator has a field day).
 
-## Space
+## Core loop (v0.0.6): Overcooked with two hands
 
-- Top-down house. You walk between stations; travel time is the Overcooked tension.
-- Stations host mini-games. The baby's stations and your stations compete for the same seconds.
+Mini-games are gone. The 6 seconds of fun is Overcooked's: walk, carry, use stations, route
+yourself under time pressure, except you have **two hands and a baby**.
 
-## Mini-games
+**Verbs.** Each hand: *grab*, *drop*, *throw*. There is no "use": using something is dropping it
+in the right place. Appliances work on their own (drop a cold bottle in the microwave, come back
+for a warm one; dishes wash in the sink). Hand-to-hand combos just happen: baby in one hand plus
+a warm bottle in the other feeds over a few seconds *while you keep walking*; baby plus clean
+diaper changes.
 
-Two sizes, both inside the 60-second round:
+**Controls.** Mouse left button = left hand, right button = right hand. Press grabs (instant).
+With something in hand, release in place drops it (into the container you're next to, or the
+floor); move the cursor then release throws it to where the cursor is. No timing threshold: the
+release is the action. Keyboard fallback: Q/J grab-drop, E/L throw facing. Gamepad: LB/RB with
+right-stick aim. Literal juggling of objects is the game.
 
-- **Micro (≈5s)**: WarioWare inputs. Mash, tap in time, drag to spot, hold steady.
-- **Short skill (15–30s)**: trace a shape, rhythm sequence, steady-hand, sort/stack.
+**The baby is a thing in a hand.** Carrying it: soothes, keeps it out of trouble, halves your
+hands (two-handed items like dishes need both hands), slows you, and every second carried is
+recorded: too much carrying stunts physical development, and the kid you play next moves slower.
+
+**Attention and the three childhoods** (`balance.json` → `baby.phases`, every number tweakable).
+The kid has a need for attention that rises from 0 to 1 while it isn't held, shown as its colour
+going green → yellow → red. Picking it up resets it to 0; walking past it pats it down a little
+(once every few seconds). At red, what happens depends on the phase:
+
+| Years | Phase | Moves | When red |
+|---|---|---|---|
+| 1 | baby | no; stays where you leave it | cries until picked up |
+| 2–3 | toddler | slowly, wandering, dropping toys | heads for the nearest hazard (microwave, dishwasher, bin, stairs) and cries on arrival |
+| 4–6 | kid | fast | climbs and jumps off something climbable (cries), or tips the bin: trash everywhere (cries) |
+
+Crying spawns a soothe ticket and costs score per second until the kid is picked up. So the
+persistent game under the chores is *paying attention*: a pat on the way past is cheap, a pickup
+is a full reset but fills a hand, and ignoring the colour is what causes the disasters.
+
+**Mess.** Three kinds, each with a home: toys → toy box, clothes → hamper, trash → bin. Anything
+on the floor costs score per second. Throwing clears mess from range, at the risk of hitting the
+baby (crying + a soothe demand) or a hazard (penalty; later: fire).
+
+**Demands** arrive as tickets with timers: feed (fridge → microwave → baby), change (shelf →
+baby → bin), soothe (carry), dishes (table → sink → cupboard). Expired baby tickets make the baby
+cry, which costs score every second until the need is met.
+
+**Years are 30 seconds and roll over in place.** No results screen; a pane slides in on the right
+with the year's stars, the numbers the kid will inherit, and anything new that just unlocked.
+
+**The ramp is the kid growing up.** Everything has a `fromYear` in `house.json` / `balance.json`:
+
+| Year | New |
+|---|---|
+| 1 | fridge → microwave → feed; empty bottle → dishwasher; soothe by carrying |
+| 2 | diapers, bin, change |
+| 2 | toddler phase: roams, hazards matter |
+| 3 | toy box, stairs |
+| 4 | kid phase: fast, climbs/tips |
+| 4 | dishes on the table → dishwasher → cupboard, counter |
+| 5 | clothes → hamper, trash → bin |
+
+Reorder by editing the numbers. Year 1 must be compelling on its own with just the bottle loop.
 
 Performance maps to an outcome (cleanliness, fed amount, sanity gained) and, over time, to traits.
 Parent condition changes the **rules** of a mini-game, not just scoring: low sanity = shaky cursor,
@@ -97,24 +149,20 @@ Parent condition changes the **rules** of a mini-game, not just scoring: low san
 Mini-game list, traits table and narrator lines live in `src/data/` as JSON so designers and
 writers own them.
 
-## Narrator
+## Narrator (parked)
 
-An AI observer. Comments on choices in real time, in an observation capacity:
-"Is taking a shower right now the *most* important thing you could be doing?" (baby crying).
-Lines are data (`src/data/narrator.json`) keyed by situation; writers own the file.
+An AI observer in the GLaDOS register. **Removed from the slice**: text at the bottom of the
+screen doesn't land; it only works as voice. `src/narrator/Narrator.js` and
+`src/data/narrator.json` stay in the repo, unwired, for when there's audio narration.
 
 ## Week-1 slice (end of week 1)
 
-Prove the moment-to-moment: **one 60-second round, a house, three mini-games, three bars, the
-narrator.** No baby yet.
+Prove the 6 seconds: **one room, two hands, the baby, four demand chains, throwing, herding,
+mess, continuous 90-second years.** No bars, no generations, no pre-baby phase yet; those
+return once the loop is fun on its own.
 
-- Walkable house with 3 stations (fridge, shower, bookshelf), each a mini-game. At least one
-  station must *raise* a maximum (e.g. cooking properly raises hunger max) so the investment
-  phase is felt in the slice.
-- Three bars with current/max; junk-vs-real food lowers hunger max; sanity at 0 erodes its max.
-- Round ends at stamina 0 → results screen → next year (stamina max slightly lower).
-- Narrator fires 10–15 lines on triggers (idle, ignored bar, bad choice, round end).
-- Flat Mini-Metro-style palette: shapes, strong colour, motion. No pixel art.
+- Flat Mini-Metro-style palette: shapes, strong colour, motion. No pixel art. Crisp text (DPR).
+- Exit: someone plays three years without being told the controls twice, and wants a fourth.
 
 ## Open questions
 

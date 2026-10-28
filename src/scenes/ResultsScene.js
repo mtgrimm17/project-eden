@@ -1,7 +1,7 @@
-// ResultsScene: end-of-year card. Shows what the year did to your maximums, then next year.
+// ResultsScene: end-of-year card. Stars, what happened, and what the next generation will inherit.
 
 import { GAME_WIDTH, GAME_HEIGHT } from '../config.js';
-import { C, FONT, RESOURCE_COLORS } from '../palette.js';
+import { C, FONT } from '../palette.js';
 
 export default class ResultsScene extends Phaser.Scene {
   constructor() {
@@ -9,51 +9,40 @@ export default class ResultsScene extends Phaser.Scene {
   }
 
   init(data) {
-    this.life = data.life;
+    this.r = data;
   }
 
   create() {
     this.cameras.main.setBackgroundColor(C.bg);
     const cx = GAME_WIDTH / 2;
-    const last = this.life.history[this.life.history.length - 1];
-    const prev = this.life.history[this.life.history.length - 2];
-    const lines = this.cache.json.get('narrator')['year-end'];
+    const r = this.r;
 
-    this.add.text(cx, 70, `AGE ${this.life.age} · YEAR ${this.life.year} COMPLETE`, {
-      fontFamily: FONT, fontSize: '30px', color: C.inkS, fontStyle: 'bold',
-    }).setOrigin(0.5);
+    this.add.text(cx, 60, `YEAR ${r.year}`, { fontFamily: FONT, fontSize: '16px', color: C.muteS, fontStyle: 'bold' }).setOrigin(0.5);
+    const stars = this.add.text(cx, 115, '★★★', { fontFamily: FONT, fontSize: '64px', color: C.wall, fontStyle: 'bold' }).setOrigin(0.5);
+    const lit = this.add.text(cx, 115, '★★★'.slice(0, r.stars), { fontFamily: FONT, fontSize: '64px', color: C.yellowS, fontStyle: 'bold' }).setOrigin(0.5);
+    lit.x = stars.x - stars.width / 2 + lit.width / 2;
+    lit.setScale(0); this.tweens.add({ targets: lit, scale: 1, duration: 400, ease: 'Back.Out', delay: 200 });
 
     const rows = [
-      ['cooked / junk', `${last.cooked} / ${last.junk}`],
-      ['showers', `${last.showers}`],
-      ['quiet time', `${last.reads}`],
-      ['seconds at zero sanity', `${Math.round(last.secondsAtZeroSanity)}`],
+      ['demands met', `${r.completed} / ${r.spawned}  (${Math.round(r.rate * 100)}%)`],
+      ['missed', `${r.expired}`],
+      ['score', `${r.score}`],
+      ['seconds carrying the baby', `${r.carriedSeconds}`],
+      ['toys left on the floor', `${r.toysLeft}`],
     ];
     rows.forEach(([k, v], i) => {
-      const y = 140 + i * 30;
-      this.add.text(cx - 200, y, k, { fontFamily: FONT, fontSize: '16px', color: C.muteS }).setOrigin(0, 0.5);
-      this.add.text(cx + 200, y, v, { fontFamily: FONT, fontSize: '16px', color: C.inkS, fontStyle: 'bold' }).setOrigin(1, 0.5);
+      const y = 190 + i * 30;
+      this.add.text(cx - 220, y, k, { fontFamily: FONT, fontSize: '16px', color: C.muteS }).setOrigin(0, 0.5);
+      this.add.text(cx + 220, y, v, { fontFamily: FONT, fontSize: '16px', color: C.inkS, fontStyle: 'bold' }).setOrigin(1, 0.5);
     });
 
-    // Maximums: this is the line that matters.
-    this.add.text(cx, 285, 'YOUR MAXIMUMS', { fontFamily: FONT, fontSize: '13px', color: C.muteS, fontStyle: 'bold' }).setOrigin(0.5);
-    ['hunger', 'sanity'].forEach((key, i) => {
-      const col = RESOURCE_COLORS[key];
-      const now = Math.round(this.life.res[key].max);
-      const before = prev ? Math.round(prev.snapshot[key].max) : now;
-      const d = now - before;
-      const y = 315 + i * 30;
-      this.add.text(cx - 200, y, `${col.glyph}  ${key}`, { fontFamily: FONT, fontSize: '16px', color: col.str, fontStyle: 'bold' }).setOrigin(0, 0.5);
-      this.add.text(cx + 200, y, `${now}  ${d === 0 ? '' : d > 0 ? `(+${d})` : `(${d})`}`, {
-        fontFamily: FONT, fontSize: '16px', color: d < 0 ? C.redS : d > 0 ? C.greenS : C.inkS, fontStyle: 'bold',
-      }).setOrigin(1, 0.5);
-    });
-    const nextMax = this.life.staminaMaxForAge(this.life.age + 1);
-    this.add.text(cx, 385, `next year: ${nextMax} seconds`, { fontFamily: FONT, fontSize: '14px', color: C.muteS }).setOrigin(0.5);
-
-    this.add.text(cx, 440, Phaser.Utils.Array.GetRandom(lines), {
-      fontFamily: FONT, fontSize: '15px', color: C.whiteS, backgroundColor: C.inkS, padding: { x: 14, y: 8 },
-      wordWrap: { width: 700 }, align: 'center',
+    const history = this.registry.get('history') ?? [];
+    const total = history.reduce((a, h) => a + h.stars, 0);
+    this.add.text(cx, 370, `lineage so far: ${total} ★ over ${history.length} year${history.length === 1 ? '' : 's'}`, {
+      fontFamily: FONT, fontSize: '14px', color: C.muteS, fontStyle: 'bold',
+    }).setOrigin(0.5);
+    this.add.text(cx, 395, 'the kid you raise this way is the parent you play next', {
+      fontFamily: FONT, fontSize: '13px', color: C.muteS,
     }).setOrigin(0.5);
 
     const prompt = this.add.text(cx, GAME_HEIGHT - 40, 'ENTER · next year', { fontFamily: FONT, fontSize: '16px', color: C.inkS, fontStyle: 'bold' }).setOrigin(0.5);

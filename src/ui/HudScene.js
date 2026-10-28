@@ -1,14 +1,14 @@
-// HudScene: overlay on GameScene. Three bars (current inside max), age/year, narrator text.
-// It reads the Life from the game scene each frame and listens for events; it never mutates state.
+// HudScene: overlay on GameScene. Ticket board (top-left), year clock and score (top-right),
+// hands (bottom-left), mess (bottom-centre), and a year-summary pane that slides in on the right.
+// Reads the game scene each frame; never mutates it.
 
 import { GAME_WIDTH, GAME_HEIGHT } from '../config.js';
-import { C, FONT, RESOURCE_COLORS } from '../palette.js';
+import { C, FONT } from '../palette.js';
 
-const BAR_X = 20;
-const BAR_Y = 16;
-const BAR_H = 14;
-const BAR_SCALE = 2.2; // pixels per point of max
-const BAR_GAP = 24;
+const TICKET_W = 120;
+const TICKET_H = 54;
+const TICKET_GAP = 8;
+const PANE_W = 230;
 
 export default class HudScene extends Phaser.Scene {
   constructor() {
@@ -16,81 +16,99 @@ export default class HudScene extends Phaser.Scene {
   }
 
   init(data) {
-    this.gameScene = data.gameScene;
+    this.g = data.gameScene;
   }
 
   create() {
-    this.life = this.gameScene.life;
-    this.bars = {};
-    let y = BAR_Y;
-    for (const key of ['stamina', 'hunger', 'sanity']) {
-      const col = RESOURCE_COLORS[key];
-      const glyph = this.add.text(BAR_X, y + BAR_H / 2, col.glyph, { fontFamily: FONT, fontSize: '16px', color: col.str, fontStyle: 'bold' }).setOrigin(0, 0.5);
-      const maxRect = this.add.rectangle(BAR_X + 26, y, 10, BAR_H, C.wall).setOrigin(0, 0).setStrokeStyle(2, C.ink);
-      const curRect = this.add.rectangle(BAR_X + 26, y, 10, BAR_H, col.fill).setOrigin(0, 0);
-      const label = this.add.text(BAR_X + 26, y + BAR_H / 2, '', { fontFamily: FONT, fontSize: '11px', color: C.muteS }).setOrigin(0, 0.5);
-      this.bars[key] = { glyph, maxRect, curRect, label };
-      y += BAR_GAP;
-    }
+    this.tickets = new Map();
+    this.timerText = this.add.text(GAME_WIDTH - 20, 14, '', { fontFamily: FONT, fontSize: '30px', color: C.inkS, fontStyle: 'bold' }).setOrigin(1, 0);
+    this.yearText = this.add.text(GAME_WIDTH - 20, 50, '', { fontFamily: FONT, fontSize: '13px', color: C.muteS, fontStyle: 'bold' }).setOrigin(1, 0);
+    this.scoreText = this.add.text(GAME_WIDTH - 110, 14, '', { fontFamily: FONT, fontSize: '22px', color: C.muteS, fontStyle: 'bold' }).setOrigin(1, 0);
+    this.handsText = this.add.text(20, GAME_HEIGHT - 22, '', { fontFamily: FONT, fontSize: '13px', color: C.muteS, fontStyle: 'bold' }).setOrigin(0, 0.5);
+    this.messText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 22, '', { fontFamily: FONT, fontSize: '13px', color: C.redS, fontStyle: 'bold' }).setOrigin(0.5);
 
-    this.ageText = this.add.text(GAME_WIDTH - 20, 16, '', { fontFamily: FONT, fontSize: '22px', color: C.inkS, fontStyle: 'bold' }).setOrigin(1, 0);
-    this.yearText = this.add.text(GAME_WIDTH - 20, 44, '', { fontFamily: FONT, fontSize: '12px', color: C.muteS }).setOrigin(1, 0);
+    this.pane = this.makePane();
 
-    this.narratorBox = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 34, 760, 44, C.ink, 0.92).setVisible(false);
-    this.narratorText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 34, '', {
-      fontFamily: FONT, fontSize: '15px', color: C.whiteS, wordWrap: { width: 720 }, align: 'center',
-    }).setOrigin(0.5).setVisible(false);
-
-    this.gameScene.events.on('narrate', this.showNarration, this);
-    this.gameScene.events.on('resource-change', this.showChange, this);
-    this.gameScene.events.once('shutdown', () => this.scene.stop());
+    this.g.events.on('ticket-complete', (t) => this.flashTicket(t, C.green, '+' + this.g.balance.scoring.complete), this);
+    this.g.events.on('ticket-expired', (t) => this.flashTicket(t, C.red, String(this.g.balance.scoring.expire)), this);
+    this.g.events.on('year-summary', this.showYear, this);
+    this.g.events.once('shutdown', () => this.scene.stop());
   }
 
   update() {
-    for (const [key, b] of Object.entries(this.bars)) {
-      const r = this.life.res[key];
-      const maxW = Math.max(6, r.max * BAR_SCALE);
-      const curW = Math.max(0, r.cur * BAR_SCALE);
-      b.maxRect.width = maxW;
-      b.curRect.width = curW;
-      b.label.x = BAR_X + 26 + maxW + 8;
-      b.label.setText(`${Math.ceil(r.cur)} / ${Math.round(r.max)}`);
-      if (key !== 'stamina') b.curRect.fillColor = r.cur <= 0 ? C.ink : RESOURCE_COLORS[key].fill;
-    }
-    this.ageText.setText(`AGE ${this.life.age}`);
-    this.yearText.setText(`year ${this.life.year}`);
-  }
+    const g = this.g;
+    this.timerText.setText(Math.ceil(Math.max(0, g.timeLeft)).toString());
+    this.yearText.setText(`YEAR ${g.year} · ${g.baby.phase.name.toUpperCase()}`);
+    this.scoreText.setText(`${Math.round(g.score)}`);
+    const name = (k) => (k ? g.items[k].label.toUpperCase() : '—');
+    this.handsText.setText(`LEFT (mouse L · Q/E): ${name(g.hands.L)}      RIGHT (mouse R · J/L): ${name(g.hands.R)}`);
+    this.messText.setText(g.messOnFloor ? `${g.messOnFloor} thing${g.messOnFloor > 1 ? 's' : ''} on the floor` : '');
 
-  showNarration({ text }) {
-    this.narratorBox.setVisible(true);
-    this.narratorText.setVisible(true).setText('');
-    this.tweens.killTweensOf(this.narratorBox);
-    this.narratorBox.alpha = 1;
-    this.narratorText.alpha = 1;
-    // typewriter
-    let i = 0;
-    if (this.typer) this.typer.remove();
-    this.typer = this.time.addEvent({
-      delay: 14, repeat: text.length - 1,
-      callback: () => { i += 1; this.narratorText.setText(text.slice(0, i)); },
-    });
-    this.time.delayedCall(3800 + text.length * 14, () => {
-      this.tweens.add({ targets: [this.narratorBox, this.narratorText], alpha: 0, duration: 400 });
+    const open = g.demands.open;
+    for (const t of open) if (!this.tickets.has(t.id)) this.tickets.set(t.id, this.makeTicket(t));
+    for (const [id, card] of this.tickets) {
+      if (!open.some((t) => t.id === id) && !card.leaving) { card.leaving = true; this.time.delayedCall(350, () => { card.destroy(); this.tickets.delete(id); }); }
+    }
+    open.forEach((t, i) => {
+      const card = this.tickets.get(t.id);
+      card.setPosition(20 + i * (TICKET_W + TICKET_GAP), 14);
+      const frac = Math.max(0, t.timer / t.total);
+      card.bar.width = (TICKET_W - 12) * frac;
+      card.bar.fillColor = frac < 0.25 ? C.red : C[t.color] ?? C.ink;
+      card.time.setText(Math.ceil(t.timer).toString());
+      card.box.setStrokeStyle(3, frac < 0.25 ? C.red : C.ink);
     });
   }
 
-  // Floating "+30 ♥  max −6" near the top bars.
-  showChange({ changes }) {
-    const parts = [];
-    for (const [key, c] of Object.entries(changes)) {
-      const g = RESOURCE_COLORS[key].glyph;
-      if (Math.abs(c.cur) >= 1) parts.push(`${c.cur > 0 ? '+' : ''}${Math.round(c.cur)} ${g}`);
-      if (c.max) parts.push(`max ${c.max > 0 ? '+' : ''}${c.max} ${g}`);
-    }
-    if (!parts.length) return;
-    const t = this.add.text(BAR_X + 300, BAR_Y + 30, parts.join('   '), {
-      fontFamily: FONT, fontSize: '16px', color: C.inkS, fontStyle: 'bold',
-    }).setOrigin(0, 0.5);
-    this.tweens.add({ targets: t, y: t.y - 30, alpha: 0, duration: 1400, ease: 'Cubic.Out', onComplete: () => t.destroy() });
+  makeTicket(t) {
+    const c = this.add.container(0, 0);
+    const box = this.add.rectangle(0, 0, TICKET_W, TICKET_H, C.bg).setOrigin(0, 0).setStrokeStyle(3, C.ink);
+    const label = this.add.text(8, 8, t.label.toUpperCase(), { fontFamily: FONT, fontSize: '14px', color: C[`${t.color}S`] ?? C.inkS, fontStyle: 'bold' });
+    const time = this.add.text(TICKET_W - 8, 8, '', { fontFamily: FONT, fontSize: '14px', color: C.muteS, fontStyle: 'bold' }).setOrigin(1, 0);
+    const bg = this.add.rectangle(6, TICKET_H - 14, TICKET_W - 12, 8, C.wall).setOrigin(0, 0);
+    const bar = this.add.rectangle(6, TICKET_H - 14, TICKET_W - 12, 8, C[t.color] ?? C.ink).setOrigin(0, 0);
+    c.add([box, label, time, bg, bar]);
+    c.box = box; c.bar = bar; c.time = time;
+    c.setScale(0.6); this.tweens.add({ targets: c, scale: 1, duration: 180, ease: 'Back.Out' });
+    return c;
+  }
+
+  flashTicket(t, color, text) {
+    const card = this.tickets.get(t.id);
+    const x = card ? card.x + TICKET_W / 2 : 80;
+    const y = card ? card.y + TICKET_H / 2 : 40;
+    if (card) card.box.fillColor = color;
+    const f = this.add.text(x, y, text, { fontFamily: FONT, fontSize: '22px', color: C.whiteS, fontStyle: 'bold', stroke: C.inkS, strokeThickness: 4 }).setOrigin(0.5).setDepth(50);
+    this.tweens.add({ targets: f, y: y - 30, alpha: 0, duration: 800, onComplete: () => f.destroy() });
+  }
+
+  // ---- year pane: slides in from the right, stays a few seconds, slides out
+  makePane() {
+    const c = this.add.container(GAME_WIDTH + PANE_W, 90).setDepth(40);
+    const box = this.add.rectangle(0, 0, PANE_W, 230, C.ink, 0.94).setOrigin(0, 0);
+    const title = this.add.text(16, 14, '', { fontFamily: FONT, fontSize: '16px', color: C.whiteS, fontStyle: 'bold' });
+    const stars = this.add.text(16, 38, '', { fontFamily: FONT, fontSize: '34px', color: C.yellowS, fontStyle: 'bold' });
+    const body = this.add.text(16, 86, '', { fontFamily: FONT, fontSize: '13px', color: C.whiteS, lineSpacing: 6 });
+    const foot = this.add.text(16, 176, '', { fontFamily: FONT, fontSize: '12px', color: C.yellowS, fontStyle: 'bold', wordWrap: { width: PANE_W - 32 } });
+    c.add([box, title, stars, body, foot]);
+    c.title = title; c.stars = stars; c.body = body; c.foot = foot;
+    return c;
+  }
+
+  showYear(s) {
+    const p = this.pane;
+    p.title.setText(`YEAR ${s.year} DONE`);
+    p.foot.setText(s.unlocked?.length ? `NEW: ${s.unlocked.join(', ')}` : '');
+    p.stars.setText('★★★'.slice(0, s.stars) + '☆☆☆'.slice(0, 3 - s.stars));
+    p.body.setText([
+      `needs met   ${s.completed} / ${s.spawned}`,
+      `missed      ${s.expired}`,
+      `score       ${s.score > 0 ? '+' : ''}${s.score}`,
+      `carried     ${s.carriedSeconds}s`,
+      `mess left   ${s.messLeft}`,
+    ].join('\n'));
+    this.tweens.killTweensOf(p);
+    this.tweens.add({ targets: p, x: GAME_WIDTH - PANE_W - 12, duration: 300, ease: 'Cubic.Out' });
+    this.tweens.add({ targets: p, x: GAME_WIDTH + PANE_W, duration: 300, ease: 'Cubic.In', delay: s.unlocked?.length ? 6500 : 4500 });
   }
 }

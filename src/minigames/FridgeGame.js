@@ -1,5 +1,6 @@
-// Fridge: choose JUNK (instant, lowers your max) or COOK (mash SPACE; fills more, raises max).
-// The short-term/long-term trade in its purest form.
+// Fridge. Choose JUNK (instant, lowers your max) or COOK (12s catch game, raises max).
+// COOK: ingredients fall; move the pan with A/D or arrows. Catch green, avoid brown.
+// Score = good caught / good spawned, minus a penalty per bad one caught.
 
 import MiniGame from './MiniGame.js';
 import { C, FONT } from '../palette.js';
@@ -11,14 +12,16 @@ export default class FridgeGame extends MiniGame {
 
   setup() {
     this.title.setText('FRIDGE');
-    this.hint.setText('←  junk   ·   cook  →');
+    this.hint.setText('←  JUNK  (fast, max −)        COOK  (12s, max +)  →');
     this.phase = 'choose';
 
-    const style = { fontFamily: FONT, fontSize: '18px', color: C.inkS, fontStyle: 'bold', align: 'center' };
-    this.junkBox = this.add.rectangle(this.cx - 120, this.cy, 180, 130, C.yellow).setStrokeStyle(3, C.ink);
-    this.add.text(this.cx - 120, this.cy, 'JUNK\n\nfast\nmax −', style).setOrigin(0.5);
-    this.cookBox = this.add.rectangle(this.cx + 120, this.cy, 180, 130, C.green).setStrokeStyle(3, C.ink);
-    this.add.text(this.cx + 120, this.cy, 'COOK\n\nslow\nmax +', { ...style, color: C.whiteS }).setOrigin(0.5);
+    const style = { fontFamily: FONT, fontSize: '20px', color: C.inkS, fontStyle: 'bold', align: 'center' };
+    this.chooseObjs = [
+      this.add.rectangle(this.cx - 150, this.cy + 10, 220, 160, C.yellow).setStrokeStyle(3, C.ink),
+      this.add.text(this.cx - 150, this.cy + 10, 'JUNK\n\ninstant\nhunger max −6', style).setOrigin(0.5),
+      this.add.rectangle(this.cx + 150, this.cy + 10, 220, 160, C.green).setStrokeStyle(3, C.ink),
+      this.add.text(this.cx + 150, this.cy + 10, 'COOK\n\n12 seconds\nhunger max +3', { ...style, color: C.whiteS }).setOrigin(0.5),
+    ];
   }
 
   tick(dt) {
@@ -27,30 +30,57 @@ export default class FridgeGame extends MiniGame {
       if (this.pressedRight()) return this.startCook();
       return;
     }
-    // cooking: mash SPACE
-    this.timeLeft -= dt;
-    if (this.pressedSpace()) {
-      this.taps += 1;
-      this.pot.setScale(1 + 0.08 * Math.sin(this.taps * 1.7));
-      this.progress.width = 300 * Math.min(1, this.taps / this.cfg.cookTaps);
+    // --- cooking
+    const dir = (this.heldRight() ? 1 : 0) - (this.heldLeft() ? 1 : 0);
+    this.pan.x = Phaser.Math.Clamp(this.pan.x + dir * this.cfg.panSpeed * dt, this.left + 60, this.right - 60);
+
+    for (const ing of this.ingredients) {
+      if (!ing.active) continue;
+      ing.y += this.cfg.fallSpeed * dt;
+      const caught = Math.abs(ing.x - this.pan.x) < 56 && Math.abs(ing.y - this.pan.y) < 14;
+      if (caught) {
+        if (ing.bad) { this.badCaught += 1; this.flash(C.red); } else { this.goodCaught += 1; this.flash(C.green); }
+        ing.setActive(false).setVisible(false);
+      } else if (ing.y > this.bottom - 30) {
+        ing.setActive(false).setVisible(false);
+      }
     }
-    this.timer.setText(this.timeLeft.toFixed(1));
-    if (this.taps >= this.cfg.cookTaps) return this.finish('cook', 1);
-    if (this.timeLeft <= 0) return this.finish('cook', this.taps / this.cfg.cookTaps);
+    this.scoreText.setText(`${this.goodCaught} / ${this.goodSpawned}`);
   }
 
   startCook() {
     this.phase = 'cook';
-    this.junkBox.destroy();
-    this.cookBox.destroy();
-    this.children.list.filter((o) => o.type === 'Text' && o !== this.title && o !== this.hint).forEach((o) => o.destroy());
-    this.hint.setText('mash SPACE');
-    this.taps = 0;
-    this.timeLeft = this.cfg.cookSeconds;
+    this.chooseObjs.forEach((o) => o.destroy());
+    this.hint.setText('A / D  or  ← →  to move the pan · catch green · avoid brown');
+    this.goodCaught = 0; this.goodSpawned = 0; this.badCaught = 0;
+    this.ingredients = [];
 
-    this.pot = this.add.circle(this.cx, this.cy - 20, 44, C.green).setStrokeStyle(3, C.ink);
-    this.add.rectangle(this.cx, this.cy + 60, 300, 16, C.wall).setStrokeStyle(2, C.ink);
-    this.progress = this.add.rectangle(this.cx - 150, this.cy + 60, 0, 16, C.green).setOrigin(0, 0.5);
-    this.timer = this.add.text(this.cx + 170, this.cy + 60, '', { fontFamily: FONT, fontSize: '14px', color: C.muteS }).setOrigin(0, 0.5);
+    this.pan = this.add.rectangle(this.cx, this.bottom - 50, 112, 16, C.ink);
+    this.add.rectangle(this.cx, this.bottom - 42, this.cardW - 40, 2, C.wall);
+    this.scoreText = this.add.text(this.cx, this.top + 72, '0 / 0', { fontFamily: FONT, fontSize: '16px', color: C.muteS, fontStyle: 'bold' }).setOrigin(0.5);
+
+    this.spawner = this.time.addEvent({ delay: this.cfg.spawnEveryMs, loop: true, callback: this.spawn, callbackScope: this });
+    this.startTimer(this.cfg.seconds, () => {
+      this.spawner.remove();
+      const score = this.goodSpawned ? this.goodCaught / this.goodSpawned - this.badCaught * this.cfg.badPenalty : 0;
+      this.finish('cook', score);
+    });
+  }
+
+  spawn() {
+    if (this.done) return;
+    const bad = Math.random() < this.cfg.badChance;
+    const x = Phaser.Math.Between(this.left + 50, this.right - 50);
+    const obj = bad
+      ? this.add.rectangle(x, this.top + 80, 22, 22, 0x8b5a2b).setStrokeStyle(2, C.ink)
+      : this.add.circle(x, this.top + 80, 12, C.green).setStrokeStyle(2, C.ink);
+    obj.bad = bad;
+    if (!bad) this.goodSpawned += 1;
+    this.ingredients.push(obj);
+  }
+
+  flash(color) {
+    this.pan.fillColor = color;
+    this.time.delayedCall(90, () => { if (this.pan.active) this.pan.fillColor = C.ink; });
   }
 }

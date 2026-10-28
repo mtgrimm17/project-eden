@@ -7,8 +7,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.stats = stats;
+    this.stats = { ...stats, maxSpeedBase: stats.maxSpeed };
     this.frozen = false;
+    this.facing = { x: 0, y: 1 }; // last movement direction; throws go this way
     this.setCollideWorldBounds(true);
     this.setCircle(16);
     if (stats.movement === 'floaty') {
@@ -35,6 +36,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const k = this.keys;
     const ax = (k.right.isDown || k.right2.isDown ? 1 : 0) - (k.left.isDown || k.left2.isDown ? 1 : 0);
     const ay = (k.down.isDown || k.down2.isDown ? 1 : 0) - (k.up.isDown || k.up2.isDown ? 1 : 0);
+    if (ax || ay) { const l = Math.hypot(ax, ay); this.facing = { x: ax / l, y: ay / l }; }
 
     if (this.stats.movement === 'floaty') {
       this.setAcceleration(ax * this.stats.acceleration, ay * this.stats.acceleration);

@@ -1,5 +1,6 @@
-// Bookshelf: rhythm. A ring shrinks onto the page; press SPACE when it lands.
-// Score = average timing accuracy across the beats. Quiet time, done attentively.
+// Bookshelf. 15s stacker: each book slides across; press SPACE to drop it on the pile.
+// Overhang is trimmed off, so sloppy drops make the next book narrower.
+// Score = average overlap across books placed (unplaced books count as zero).
 
 import MiniGame from './MiniGame.js';
 import { C, FONT } from '../palette.js';
@@ -10,56 +11,64 @@ export default class ReadGame extends MiniGame {
   }
 
   setup() {
-    this.title.setText('READ');
-    this.hint.setText('press SPACE as the ring lands on the page');
+    this.title.setText('BOOKSHELF');
+    this.hint.setText('SPACE to drop the sliding book onto the pile');
 
-    this.beat = 0;
-    this.scores = [];
-    this.elapsed = 0;
-    this.hitThisBeat = false;
+    this.placed = 0;
+    this.overlaps = [];
+    this.shelfY = this.bottom - 50;
+    this.add.rectangle(this.cx, this.shelfY + 4, this.cardW - 80, 8, C.ink);
 
-    this.page = this.add.rectangle(this.cx, this.cy, 70, 90, C.white).setStrokeStyle(3, C.ink);
-    this.ring = this.add.circle(this.cx, this.cy, 120).setStrokeStyle(4, C.green);
-    this.ring.isFilled = false;
-    this.dots = [];
-    for (let i = 0; i < this.cfg.beats; i++) {
-      this.dots.push(this.add.circle(this.cx - (this.cfg.beats - 1) * 14 + i * 28, this.cy + 85, 7, C.wall).setStrokeStyle(2, C.ink));
-    }
+    this.colors = [C.red, C.blue, C.green, C.yellow];
+    this.baseX = this.cx; this.baseW = this.cfg.bookWidth; // the top of the pile
+    this.spawnBook();
+    this.countText = this.add.text(this.cx, this.top + 72, '', { fontFamily: FONT, fontSize: '16px', color: C.muteS, fontStyle: 'bold' }).setOrigin(0.5);
+
+    this.startTimer(this.cfg.seconds, () => this.finish('done', this.score()));
+  }
+
+  spawnBook() {
+    const w = this.baseW;
+    const y = this.shelfY - (this.placed + 0.5) * this.cfg.bookHeight;
+    this.dir = this.placed % 2 === 0 ? 1 : -1;
+    const startX = this.dir === 1 ? this.left + 20 + w / 2 : this.right - 20 - w / 2;
+    this.book = this.add.rectangle(startX, y, w, this.cfg.bookHeight - 2, this.colors[this.placed % 4]).setStrokeStyle(2, C.ink);
+    this.speed = this.cfg.slideSpeed + this.placed * this.cfg.speedUpPerBook;
   }
 
   tick(dt) {
-    this.elapsed += dt * 1000;
-    const period = this.cfg.beatMs;
-    const beatIndex = Math.floor(this.elapsed / period);
-    const phase = (this.elapsed % period) / period; // 0..1, lands at 1
+    const b = this.book;
+    b.x += this.dir * this.speed * dt;
+    const minX = this.left + 20 + b.width / 2; const maxX = this.right - 20 - b.width / 2;
+    if (b.x <= minX || b.x >= maxX) { this.dir *= -1; b.x = Phaser.Math.Clamp(b.x, minX, maxX); }
 
-    if (beatIndex > this.beat) {
-      if (!this.hitThisBeat) this.record(0, this.beat);
-      this.beat = beatIndex;
-      this.hitThisBeat = false;
-      if (this.beat >= this.cfg.beats) {
-        const avg = this.scores.reduce((a, b) => a + b, 0) / this.cfg.beats;
-        return this.finish('done', avg);
-      }
-    }
-
-    const r = 120 - 85 * phase;
-    this.ring.setRadius(r);
-
-    if (this.pressedSpace() && !this.hitThisBeat) {
-      // distance to the nearest landing (end of this beat or end of previous)
-      const toEnd = (1 - phase) * period;
-      const fromStart = phase * period;
-      const err = Math.min(toEnd, fromStart);
-      const s = err <= this.cfg.perfectMs ? 1 : err <= this.cfg.goodMs ? 0.6 : 0.15;
-      this.record(s, this.beat);
-      this.hitThisBeat = true;
-    }
+    if (this.pressedSpace()) this.drop();
+    this.countText.setText(`${this.placed} / ${this.cfg.books}`);
   }
 
-  record(score, i) {
-    this.scores[i] = score;
-    const dot = this.dots[i];
-    if (dot) dot.fillColor = score >= 1 ? C.green : score >= 0.6 ? C.yellow : C.red;
+  drop() {
+    const b = this.book;
+    const leftEdge = Math.max(b.x - b.width / 2, this.baseX - this.baseW / 2);
+    const rightEdge = Math.min(b.x + b.width / 2, this.baseX + this.baseW / 2);
+    const overlapW = rightEdge - leftEdge;
+
+    if (overlapW <= 8) {
+      // missed the pile entirely: book falls off, no credit
+      this.tweens.add({ targets: b, y: b.y + 200, alpha: 0, angle: 30, duration: 350 });
+      this.overlaps.push(0);
+    } else {
+      b.x = (leftEdge + rightEdge) / 2; b.width = overlapW;
+      b.setSize(overlapW, this.cfg.bookHeight - 2);
+      this.overlaps.push(overlapW / this.cfg.bookWidth);
+      this.baseX = b.x; this.baseW = overlapW;
+    }
+    this.placed += 1;
+    if (this.placed >= this.cfg.books) return this.finish('done', this.score());
+    this.spawnBook();
+  }
+
+  score() {
+    const sum = this.overlaps.reduce((a, v) => a + v, 0);
+    return sum / this.cfg.books;
   }
 }
