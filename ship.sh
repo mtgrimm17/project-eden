@@ -22,8 +22,10 @@ for lock in .git/index.lock .git/HEAD.lock .git/objects/maintenance.lock; do
 done
 
 if [ -d tools/node_modules ]; then
-  echo "== smoke test"
+  echo "== smoke test: root game"
   (cd tools && node smoke-test.mjs) || { echo "!! smoke test failed; not shipping."; exit 1; }
+  echo "== smoke test: runner prototype"
+  (cd tools && node smoke-runner.mjs) || { echo "!! runner smoke test failed; not shipping."; exit 1; }
 fi
 
 echo "== committing"

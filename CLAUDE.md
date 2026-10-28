@@ -25,7 +25,8 @@ other people's work. Not for cleverness.
 | `assets/` | images, audio, fonts | art / audio |
 | `docs/` | design docs, roadmap, decisions | everyone |
 | `steam/` | Electron wrap + Steamworks notes | engineers |
-| `tools/` | Dev-only: smoke test. Only place npm deps are allowed. | engineers |
+| `tools/` | Dev-only: smoke tests (`smoke-test.mjs` root game, `smoke-runner.mjs` runner, `harness.mjs` shared). Only place npm deps are allowed. | engineers |
+| `runner/` | The platformer prototype. Own `src/`, shares `lib/` and `VERSION`. See `docs/RUNNER.md`. | everyone |
 
 When asked to make a change, put it in the right folder. If a request spans folders, say so and
 keep the change minimal in the folders the person doesn't own.
@@ -44,9 +45,9 @@ keep the change minimal in the folders the person doesn't own.
    `PreloadScene.makePlaceholderTextures()` so the game still runs.
 7. **Keep files small.** If a file passes ~200 lines, split it.
 8. **Never edit `lib/`.**
-9. Before saying a change is done, run the smoke test: `cd tools && npm install && node smoke-test.mjs`.
-   It boots the real game in Node and must print `all good`. If it fails, fix it before reporting back.
-   When you add a mechanic, add a check for it to the CHECKS section of `tools/smoke-test.mjs`.
+9. Before saying a change is done, run the smoke tests: `cd tools && npm install && node smoke-test.mjs && node smoke-runner.mjs`.
+   They boot the real games in Node and must print `all good`. If one fails, fix it before reporting back.
+   When you add a mechanic, add a check for it to the matching test.
    It can't see visuals, so also ask the person to refresh their browser and look.
 10. Don't rename or move files other people are likely working in without being asked.
 11. Then bump the version (see Versioning) and write `.ship-message` + the ship one-liner (see Git).
@@ -90,6 +91,7 @@ Also don't run `npm install` inside the project folder except in `tools/` (git-i
 7. **The version is stamped in all of these, every time:**
    - `src/config.js` → `VERSION`
    - `index.html` → both `?v=` params (phaser.min.js and main.js)
+   - `runner/index.html` → both `?v=` params
    The badge bottom-right of the game (`src/ui/VersionScene.js`, launched by BootScene and never
    stopped) reads `VERSION`, so it updates on its own. It must be visible in every scene; if you add
    a scene, keep `VersionScene` last in the scene list in `main.js`.

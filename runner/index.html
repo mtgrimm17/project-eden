@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project Eden — Runner prototype</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #0b0b10; height: 100%; overflow: hidden; }
+    #game { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    canvas { image-rendering: auto; }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <!-- Shares Phaser and VERSION with the root game. ?v= must match VERSION in ../src/config.js. -->
+  <script src="../lib/phaser.min.js?v=0.0.7"></script>
+  <script type="module" src="src/main.js?v=0.0.7"></script>
+</body>
+</html>

@@ -1,6 +1,5 @@
-// Smoke test: boots the real game in Node (no browser needed) and checks that
-// Boot → Preload → Menu → Game all start without errors, data files load, and the
-// core loop (player overlaps pickup → score goes up) works.
+// Smoke test for the root game (the parenting prototype). Boots it in Node via harness.mjs
+// and walks the core loop. See smoke-runner.mjs for the runner prototype.
 //
 //   cd tools && npm install        (once; installs jsdom only, dev-only)
 //   node smoke-test.mjs            (exit code 0 = pass)
@@ -9,106 +8,20 @@
 // It fakes the DOM, canvas and XHR, so it can't catch visual bugs — only wiring,
 // data and logic errors. Extend the CHECKS section when the concept lands.
 
-import { JSDOM } from 'jsdom';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { boot } from './harness.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const BOOT_WAIT_MS = 1500;
-
-// ---------------------------------------------------------------- fake browser
-const dom = new JSDOM('<!doctype html><html><body><div id="game"></div></body></html>', {
-  pretendToBeVisual: true, url: 'http://localhost/',
-});
-const w = dom.window;
-dom.virtualConsole?.on?.('jsdomError', () => {});
-w.focus = () => {};
-const def = (k, v) => { try { Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true }); } catch {} };
-
-for (const k of ['window', 'document', 'navigator', 'HTMLCanvasElement', 'requestAnimationFrame', 'cancelAnimationFrame',
-  'HTMLElement', 'Element', 'Event', 'KeyboardEvent', 'MouseEvent', 'TouchEvent', 'Blob', 'URL',
-  'HTMLVideoElement', 'HTMLImageElement', 'ImageData', 'Path2D', 'DOMParser', 'XMLSerializer', 'FileReader',
-  'MutationObserver', 'Audio', 'HTMLAudioElement', 'screen']) if (w[k] !== undefined) def(k, w[k]);
-def('self', globalThis);
-def('getComputedStyle', w.getComputedStyle.bind(w));
-def('AudioContext', undefined); // forces Phaser onto HTML5 audio, which is a no-op here
-if (!w.CanvasRenderingContext2D) w.CanvasRenderingContext2D = class CanvasRenderingContext2D {};
-def('CanvasRenderingContext2D', w.CanvasRenderingContext2D);
-
-// Canvas 2D context: every method is a no-op, measurements return plausible numbers.
-const fakeCtx = new Proxy({
-  canvas: null,
-  measureText: () => ({ width: 10, actualBoundingBoxAscent: 8, actualBoundingBoxDescent: 2 }),
-  getImageData: (x, y, cw, ch) => ({ data: new Uint8ClampedArray(cw * ch * 4), width: cw, height: ch }),
-  createImageData: (cw, ch) => ({ data: new Uint8ClampedArray(cw * ch * 4), width: cw, height: ch }),
-  createLinearGradient: () => ({ addColorStop() {} }),
-  createPattern: () => ({}),
-}, { get: (t, k) => (k in t ? t[k] : () => {}), set: (t, k, v) => { t[k] = v; return true; } });
-w.HTMLCanvasElement.prototype.getContext = (type) => (type === '2d' ? fakeCtx : null);
-w.HTMLCanvasElement.prototype.toDataURL = () => 'data:,';
-
-// XHR: serve files straight from the repo folder.
-class FakeXHR extends w.EventTarget {
-  constructor() { super(); this.readyState = 0; this.status = 0; this.responseText = ''; this.response = ''; this.responseType = ''; this.timeout = 0; this.onload = null; this.onerror = null; this.onprogress = null; }
-  open(_m, u) { this.url = u; this.readyState = 1; }
-  setRequestHeader() {} overrideMimeType() {} abort() {} getResponseHeader() { return null; } getAllResponseHeaders() { return ''; }
-  send() {
-    setTimeout(() => {
-      try {
-        const t = fs.readFileSync(path.join(ROOT, this.url), 'utf8');
-        this.status = 200; this.readyState = 4; this.responseText = t; this.response = t;
-        this.dispatchEvent(new w.Event('load')); if (this.onload) this.onload(new w.Event('load'));
-      } catch (e) {
-        this.status = 404; this.readyState = 4;
-        if (this.onerror) this.onerror(e); this.dispatchEvent(new w.Event('error'));
-      }
-    }, 5);
-  }
-}
-def('XMLHttpRequest', FakeXHR); w.XMLHttpRequest = FakeXHR;
-
-// Image: "loads" instantly as a 32x32 image.
-const ImgStub = function () {
-  const el = w.document.createElement('img');
-  Object.defineProperty(el, 'src', {
-    set(v) {
-      el.__src = v;
-      for (const [k, val] of Object.entries({ width: 32, height: 32, naturalWidth: 32, naturalHeight: 32, complete: true })) Object.defineProperty(el, k, { value: val, configurable: true });
-      setTimeout(() => el.dispatchEvent(new w.Event('load')), 1);
-    },
-    get() { return el.__src; }, configurable: true,
-  });
-  return el;
-};
-def('Image', ImgStub); w.Image = ImgStub;
-
-// ---------------------------------------------------------------- boot phaser + game
-new Function(fs.readFileSync(path.join(ROOT, 'lib/phaser.min.js'), 'utf8'))();
-globalThis.Phaser.AUTO = Phaser.CANVAS;
-
-const errors = [];
-setTimeout(() => { console.error('TIMEOUT: smoke test did not finish in 60s'); process.exit(1); }, 60000);
-process.on('uncaughtException', (e) => { errors.push(e); console.error('ERROR:', e.message); });
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const fail = (msg) => { console.error('FAIL:', msg); errors.push(new Error(msg)); };
-const ok = (msg) => console.log('ok  ', msg);
-
-await import(path.join(ROOT, 'src/main.js'));
-const game = w.game;
-await sleep(BOOT_WAIT_MS);
+const t = await boot({ root: ROOT, base: '.', entry: 'src/main.js' });
+const { game, sleep, ok, fail, active } = t;
 
 // ---------------------------------------------------------------- CHECKS
-const active = () => game.scene.getScenes(true).map((s) => s.scene.key);
-
 if (active().includes('Menu')) ok('boots to Menu'); else fail(`expected Menu active, got [${active()}]`);
 if (active().includes('Version')) ok('version badge scene is running'); else fail('Version scene not active');
 
-// Version must be stamped consistently (config.js VERSION == every ?v= in index.html).
-const cfg = fs.readFileSync(path.join(ROOT, 'src/config.js'), 'utf8').match(/VERSION\s*=\s*'([^']+)'/)?.[1];
-const vParams = [...fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').matchAll(/\?v=([\w.-]+)/g)].map((m) => m[1]);
-if (cfg && vParams.length >= 2 && vParams.every((v) => v === cfg)) ok(`version ${cfg} stamped consistently`);
-else fail(`version mismatch: config.js=${cfg}, index.html=[${vParams}]`);
+t.checkVersion(['index.html', 'runner/index.html']);
 
 // --- Pure simulation checks (no Phaser needed) -----------------------------
 const balance = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/balance.json'), 'utf8'));
@@ -267,6 +180,4 @@ if (active().includes('Game') && g.year === yBefore + 1 && g.timeLeft > 20) ok('
 if (summary && typeof summary.stars === 'number' && g.history.length >= 1) ok(`year summary emitted (${summary.stars}★, ${summary.completed}/${summary.spawned})`); else fail('no year summary');
 
 // ---------------------------------------------------------------- done
-game.destroy(true);
-console.log(errors.length ? `\n${errors.length} problem(s)` : '\nall good');
-process.exit(errors.length ? 1 : 0);
+t.done();

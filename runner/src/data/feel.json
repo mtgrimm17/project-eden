@@ -1,0 +1,58 @@
+{
+  "_comment": "The feel of the movement. Every number here is the game. Units: pixels and seconds. Designers: change one thing at a time and refresh.",
+
+  "run": {
+    "_what": "Ground movement. accel = how fast you reach maxSpeed; decel = how fast you stop; turnBoost multiplies accel when reversing direction.",
+    "maxSpeed": 320,
+    "accel": 2800,
+    "decel": 3400,
+    "turnBoost": 1.6
+  },
+
+  "air": {
+    "_what": "Control while airborne. Lower than ground so jumps commit, but enough to steer.",
+    "accel": 1900,
+    "decel": 500,
+    "maxSpeed": 320
+  },
+
+  "jump": {
+    "_what": "velocity = initial upward speed. Releasing early multiplies upward speed by cutMultiplier (variable height). coyoteMs = grace after leaving a ledge. bufferMs = grace for pressing before landing.",
+    "velocity": 660,
+    "cutMultiplier": 0.4,
+    "coyoteMs": 100,
+    "bufferMs": 120,
+    "_apex": "Near the top of a jump (|vy| < apexThreshold) gravity is scaled down for hang time.",
+    "apexThreshold": 70,
+    "apexGravityScale": 0.5
+  },
+
+  "gravity": {
+    "up": 2100,
+    "down": 2600,
+    "maxFall": 1000
+  },
+
+  "wall": {
+    "_what": "Pressing into a wall while falling slides at slideSpeed. Jumping off it launches away at (vx, vy) and locks horizontal input for lockMs so you don't cancel it.",
+    "slideSpeed": 150,
+    "jumpVx": 360,
+    "jumpVy": 620,
+    "lockMs": 130,
+    "stickMs": 80
+  },
+
+  "body": {
+    "width": 22,
+    "height": 28
+  },
+
+  "camera": {
+    "_what": "lerp = how quickly the camera catches up (0..1 per frame-ish). lookAhead = pixels ahead of the player in the facing direction.",
+    "lerp": 0.12,
+    "lookAhead": 60
+  },
+
+  "respawnMs": 450,
+  "goldTimeBonusSeconds": 1.0
+}

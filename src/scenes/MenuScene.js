@@ -29,6 +29,11 @@ export default class MenuScene extends Phaser.Scene {
       fontFamily: FONT, fontSize: '13px', color: C.muteS,
     }).setOrigin(0.5);
 
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 40, 'press P for the platformer prototype', {
+      fontFamily: FONT, fontSize: '13px', color: C.muteS, fontStyle: 'bold',
+    }).setOrigin(0.5);
+    this.input.keyboard.once('keydown-P', () => { window.location.href = 'runner/'; });
+
     const start = () => this.scene.start('Game');
     this.input.keyboard.once('keydown-ENTER', start);
     this.input.keyboard.once('keydown-SPACE', start);

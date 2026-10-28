@@ -27,7 +27,8 @@ src/
 assets/             images, audio, fonts
 docs/               DESIGN.md, ROADMAP.md
 steam/              Electron wrap for the Steam build
-tools/              smoke test (boots the game in Node, no browser needed)
+tools/              smoke tests (boot the games in Node, no browser needed)
+runner/             the platformer prototype (docs/RUNNER.md); open runner/ or press P on the menu
 .github/workflows/  deploys main to GitHub Pages on every push
 ```
 
