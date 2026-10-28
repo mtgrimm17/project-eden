@@ -109,21 +109,81 @@ const vParams = [...fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').match
 if (cfg && vParams.length >= 2 && vParams.every((v) => v === cfg)) ok(`version ${cfg} stamped consistently`);
 else fail(`version mismatch: config.js=${cfg}, index.html=[${vParams}]`);
 
-game.scene.getScene('Menu').scene.start('Game', { levelId: 'level-1' });
+// --- Pure simulation checks (no Phaser needed) -----------------------------
+const balance = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/balance.json'), 'utf8'));
+const { default: Life } = await import(path.join(ROOT, 'src/sim/Life.js'));
+{
+  const life = new Life(balance);
+  life.startYear();
+  if (life.age === balance.life.startAge && life.res.stamina.cur === balance.life.staminaAt18) ok('life starts at 18 with full stamina'); else fail('bad life start');
+  const old = new Life(balance); old.age = balance.life.oldAge; old.startYear();
+  if (old.res.stamina.max < life.res.stamina.max) ok(`stamina shrinks with age (${life.res.stamina.max}s → ${old.res.stamina.max}s)`); else fail('stamina does not shrink with age');
+
+  const beforeMax = life.res.hunger.max;
+  life.apply(balance.stations.fridge.junk, 1);
+  if (life.res.hunger.max < beforeMax) ok('junk food lowers hunger max'); else fail('junk food did not lower max');
+  life.apply(balance.stations.fridge.cook, 1);
+  if (life.res.hunger.max === beforeMax + balance.stations.fridge.junk.hunger.max + balance.stations.fridge.cook.hunger.max) ok('cooking raises hunger max'); else fail('cooking did not raise max');
+  life.apply(balance.stations.fridge.cook, 0.1);
+  const sMax = life.res.sanity.max;
+  life.res.sanity.cur = 0; life.tick(5);
+  if (life.res.sanity.max < sMax) ok('sanity at zero erodes sanity max'); else fail('sanity erosion missing');
+  life.res.hunger.cur = 0; life.tick(balance.resources.hunger.starveSeconds + 1);
+  if (!life.alive) ok('starving long enough is lethal'); else fail('starvation not lethal');
+}
+
+// --- Scene flow ---------------------------------------------------------------
+game.scene.getScene('Menu').scene.start('Game');
 await sleep(800);
 if (active().includes('Game') && active().includes('Hud')) ok('Game + Hud start'); else fail(`expected Game+Hud, got [${active()}]`);
 if (active().includes('Version')) ok('version badge survives scene change'); else fail('Version scene stopped');
 
 const g = game.scene.getScene('Game');
-const level = g.cache.json.get('levels')['level-1'];
-if (g.player && Math.round(g.player.x) === level.playerStart.x) ok('player spawns at level start'); else fail('player not at level start');
-if (g.pickups.countActive() === level.pickups.length) ok(`${level.pickups.length} pickups spawned`); else fail('pickup count mismatch');
+const house = g.cache.json.get('house');
+if (g.player && Math.round(g.player.x) === house.playerStart.x) ok('player spawns at house start'); else fail('player not at start');
+if (g.stations.length === house.stations.length) ok(`${g.stations.length} stations placed`); else fail('station count mismatch');
+if (g.life.year === 1 && g.life.res.stamina.cur > 0) ok('year 1 clock running'); else fail('life not started');
 
-const first = g.pickups.getChildren()[0];
-g.player.setPosition(first.x, first.y);
-await sleep(300);
-const expected = g.cache.json.get('balance').scoring.pickupValue;
-if (g.score === expected && g.pickups.countActive() === level.pickups.length - 1) ok('pickup overlap scores'); else fail(`score ${g.score}, pickups ${g.pickups.countActive()}`);
+// Walk to the fridge and use it → mini-game scene appears on top.
+const fridge = g.stations.find((s) => s.id === 'fridge');
+g.player.setPosition(fridge.x + fridge.w / 2 + 10, fridge.y);
+await sleep(100);
+if (g.nearStation && g.nearStation.id === 'fridge') ok('station proximity detected'); else fail(`nearStation=${g.nearStation?.id}`);
+g.openMinigame(fridge);
+await sleep(200);
+if (active().includes('MG_Fridge') && g.inMinigame) ok('fridge mini-game launches'); else fail(`mini-game not active [${active()}]`);
+const hungerMaxBefore = g.life.res.hunger.max;
+game.scene.getScene('MG_Fridge').finish('junk', 1, 'Junk');
+await sleep(700);
+if (!g.inMinigame && !active().includes('MG_Fridge')) ok('mini-game closes and returns control'); else fail('mini-game did not close');
+if (g.life.res.hunger.max < hungerMaxBefore && g.life.yearStats.junk === 1) ok('junk outcome applied to life'); else fail('junk result not applied');
+
+// Run the other two mini-games for a moment each (covers their tick loops), then finish them.
+for (const [id, key] of [['shower', 'MG_Shower'], ['bookshelf', 'MG_Read']]) {
+  const st = g.stations.find((s) => s.id === id);
+  g.openMinigame(st);
+  await sleep(900);
+  if (active().includes(key)) ok(`${id} mini-game runs`); else fail(`${key} not active [${active()}]`);
+  const before = g.life.res.sanity.cur;
+  game.scene.getScene(key).finish('done', 1);
+  await sleep(700);
+  if (!g.inMinigame && g.life.res.sanity.cur > before) ok(`${id} result restores sanity`); else fail(`${id} result not applied`);
+}
+
+// Burn the clock → Results.
+g.life.res.stamina.cur = 0.01;
+await sleep(400);
+if (active().includes('Results') && !active().includes('Game')) ok('year ends into Results'); else fail(`expected Results, got [${active()}]`);
+if (g.life.history.length === 1) ok('year recorded in history'); else fail('history not recorded');
+game.scene.getScene('Results').scene.start('Game');
+await sleep(600);
+const g2 = game.scene.getScene('Game');
+if (g2.life.year === 2 && g2.life.age === 19) ok('next year starts at age 19'); else fail(`year ${g2.life.year}, age ${g2.life.age}`);
+
+// Starve → GameOver.
+g2.life.res.hunger.cur = 0; g2.life.starving = balance.resources.hunger.starveSeconds;
+await sleep(400);
+if (active().includes('GameOver')) ok('death ends in GameOver'); else fail(`expected GameOver, got [${active()}]`);
 
 // ---------------------------------------------------------------- done
 game.destroy(true);

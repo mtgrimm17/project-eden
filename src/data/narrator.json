@@ -1,0 +1,68 @@
+{
+  "_comment": "Narrator lines keyed by trigger. Writers own this file. The narrator is an AI observer analysing human behaviour: sarcastic, omniscient, never cruel for its own sake. Keep lines under ~110 characters.",
+
+  "run-start": [
+    "Subject is eighteen. Full stamina, no responsibilities. Statistically, this is the peak.",
+    "Beginning observation. Please behave naturally. You will anyway.",
+    "A new human. Let's see how long the optimism lasts."
+  ],
+  "year-start": [
+    "Another year. Slightly fewer seconds in it. You may have noticed.",
+    "Good morning. Your maximums are what they are because of you.",
+    "Observation resumes. Try to make different mistakes this time."
+  ],
+  "idle": [
+    "Standing still is a choice. I'm logging it as one.",
+    "Fascinating. The subject appears to be thinking. Stamina does not pause for this.",
+    "Every second you spend here is a second you don't spend anywhere else. Just an observation."
+  ],
+  "hunger-low": [
+    "Your hunger bar would like a word. Several words. Mostly 'fridge'.",
+    "Humans require food. I'm told this comes as a surprise roughly once a day."
+  ],
+  "hunger-zero": [
+    "You are now starving. This is the part where the maximums stop mattering.",
+    "Zero hunger. I'd call this an experiment, except you didn't design it."
+  ],
+  "sanity-low": [
+    "Sanity is low. Consider sitting down with a book. Or just sitting down.",
+    "I can see your sanity bar from here. So can your future children."
+  ],
+  "sanity-zero": [
+    "Sanity: zero. Your maximum is now shrinking by the second. Take your time.",
+    "You have run out of sanity. Each second here costs you a little of the next year's."
+  ],
+  "stamina-low": [
+    "Ten seconds left in the year. Choose carefully, or don't. I'll note it either way.",
+    "Nearly bedtime. Whatever you didn't do today becomes tomorrow's maximum."
+  ],
+  "fridge-junk": [
+    "Junk food. Fast, satisfying, and your maximum just got a little smaller. Efficient.",
+    "That filled you up quickly. It will fill you up less next time. Interest rates, essentially.",
+    "Is that the most important thing you could be eating right now?"
+  ],
+  "fridge-cook": [
+    "Cooking. Slow, effortful, and your maximum thanks you. Suspiciously adult behaviour.",
+    "A real meal. I'll adjust my predictions for you upward by a rounding error.",
+    "You cooked. I've noted it in the file under 'anomalies'."
+  ],
+  "shower-done": [
+    "Clean. Not productive, but clean. I'm told it helps with the sanity.",
+    "A shower. Is this the MOST important thing you could be doing right now? Probably, yes. For now.",
+    "Hygiene restored. Your future baby will be grateful in ways it cannot express."
+  ],
+  "bookshelf-done": [
+    "Reading. Quiet time. Your sanity maximum grew by an amount I'll call 'modest'.",
+    "You read a book. Mostly the same page, but it counts.",
+    "Quiet time logged. This is the kind of thing you'll have no time for later."
+  ],
+  "year-end": [
+    "Year complete. You survived, which is the bar. The bar is low.",
+    "Sleep. Your maximums are now locked in for tomorrow. You chose them.",
+    "The day ends. Tomorrow has slightly fewer seconds in it. Plan accordingly, or don't."
+  ],
+  "death": [
+    "Subject has starved. Observation concluded. This was avoidable, which is the interesting part.",
+    "Lineage terminated. I'll file this under 'prioritisation'."
+  ]
+}

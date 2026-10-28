@@ -1,5 +1,4 @@
-// BootScene: runs first. Loads the tiny things needed to draw a loading bar,
-// then hands off to PreloadScene. You will rarely need to edit this.
+// BootScene: runs first. Loads the data files, launches the version badge, hands off to Preload.
 
 export default class BootScene extends Phaser.Scene {
   constructor() {
@@ -8,7 +7,8 @@ export default class BootScene extends Phaser.Scene {
 
   preload() {
     this.load.json('balance', 'src/data/balance.json');
-    this.load.json('levels', 'src/data/levels.json');
+    this.load.json('house', 'src/data/house.json');
+    this.load.json('narrator', 'src/data/narrator.json');
   }
 
   create() {

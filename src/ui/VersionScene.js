@@ -3,6 +3,7 @@
 // It is last in the scene list in main.js, which keeps it drawn on top.
 
 import { GAME_WIDTH, GAME_HEIGHT, VERSION } from '../config.js';
+import { C, FONT } from '../palette.js';
 
 export default class VersionScene extends Phaser.Scene {
   constructor() {
@@ -11,7 +12,7 @@ export default class VersionScene extends Phaser.Scene {
 
   create() {
     this.add.text(GAME_WIDTH - 8, GAME_HEIGHT - 6, `v${VERSION}`, {
-      fontFamily: 'monospace', fontSize: '12px', color: '#6b6b78',
+      fontFamily: FONT, fontSize: '12px', color: C.muteS,
     }).setOrigin(1).setDepth(1000);
   }
 }
